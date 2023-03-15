@@ -2,13 +2,49 @@
 title: "Larvae Burden Analyses Template"
 author: "Your Name"
 date: "The Date"
-output: pdf_document
+output: html_document
 ---
+<style type="text/css">
+options(width = 60)
+
+<style type="text/css">
+
+h1.title {
+  font-size: 24px;
+  text-align: center
+}
+
+h2,h3,h4 {
+  font-size: 18px;
+  text-align: center
+}
+
+body,td {
+   font-size: 14px; 
+   font-family: "Times New Roman"
+}
+
+code.r {
+  font-size: 12px;
+  font-family: "Times New Roman"
+}
+pre {
+  font-size: 12px
+  font-family: "Times New Roman"
+}
+
+</style>
+<style type="text/css">
+options(width = 10)
+
+</style>
+
 ##Making sure your R markdown is getting your code from the right place
 
 First let's setup your R markdown so that you can get your data from wherever you have your data stored. If you are importing this code into an newly created project, that should be your root directory. This code will find the root file and make it your directory. 
 
 ```{r setup, include=FALSE}
+library(rprojroot)
 rootdir <- toString(find_rstudio_root_file())
 knitr::opts_knit$set(root.dir = (rootdir))
 knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
@@ -36,7 +72,7 @@ The next set of sections are simplifying the labels for each of your images. Thi
 "Date_Fishline_Mmstrain-fluorescent color_#dpi_magnification" 
 Example: 2023-03-05_AB_WT-cer_5dpi_5x
 
-```{r create dpi column}
+```{r create dpi column, include=FALSE}
 burdenall <- rbind(burden_1dpi,burden_data_5dpi) 
 #make a new data set that combines both imported data sets.
 
@@ -49,7 +85,7 @@ names(burdenall_clean)[names(burdenall_clean) == 'X'] <- 'dpi'
 
 Let's simplify days post infection column. Search for _dpi in the your sample label and transfer that number to your dpi column. I have shown 1 and 5 dpi here since that is what we use for standard infections, but this can be altered to different numbers.
 
-```{r simplify dpi column}
+```{r simplify dpi column, include=FALSE}
 for (i in 1:length(burdenall_clean$Label)) {
   if ((grepl("1dpi", burdenall_clean[i, "Label"]) == TRUE)) {
     burdenall_clean[i,"dpi"] <- 1
@@ -63,8 +99,8 @@ for (i in 1:length(burdenall_clean$Label)) {
 
 
 ##Are you using different fish lines? Let's make a new column for it and use a similar code as above to find it in yoru Label and transfer it to that column SKIP THIS IF THIS if you are using the same fish line throughout 
-```{r create fish line column }
-burdenall_clean <- cbind(burdenall_clean, "Fish_line")
+```{r create fish line column, include=FALSE}
+burdenall_clean["Fish_line"] <- NA
 for (i in 1:length(burdenall_clean$Label)) {
   if ((grepl("_fishline1_", burdenall_clean[i, "Label"]) == TRUE)) {
     burdenall_clean[i,"Fish_line"] <- "Fish line 1"
@@ -79,7 +115,7 @@ for (i in 1:length(burdenall_clean$Label)) {
 
 ##Are you using different bacterial strains? Let's make a new column for it and use a similar code as above to find it in yoru Label and transfer it to that column SKIP THIS if you are using the same bacteria strain throughout 
 ```{r create bacteria strain column}
-burdenall_clean <- cbind(burdenall_clean, "mm_strain")
+burdenall_clean["mm_strain"] <- NA
 
 for (i in 1:length(burdenall_clean$Label)) {
   if ((grepl("Bacterialstrain1-fluor", burdenall_clean[i, "Label"]) == TRUE)) {
@@ -108,6 +144,7 @@ burden_data_final$FBU = burden_data_final$Area *burden_data_final$Mean
 head(burden_data_final)
 tail(burden_data_final)
 
+library(usethis)
 use_data(burden_data_final, overwrite = TRUE)
 write.csv(burden_data_final)
 ```
@@ -172,7 +209,7 @@ cdata[match(level_order, cdata$Strain_dpi), ]
 ##Anova Analyses
 Now that we can see all of our data, we will analyze it using a 1-way ANOVA
 ```{r anova, echo=FALSE}
-res.aov <- aov(FBU ~ Strain_dpi, data = burden_data_clean)
+res.aov <- aov(FBU ~ Strain_dpi, data = burden_data_final)
 
 summary(res.aov)
 
@@ -210,7 +247,7 @@ graph_order <- level_order
 #x and y vairables will go in the aesthetics (aes) portion. 
 #Our x axis will be our Strain_dpi groupings and the order will be the level order specified above. 
 
-baseplot <- ggplot(data=burden_data_clean, aes(x = factor("Strain_dpi" ,levels = graph_order), y="FBU", fill= "mm_strain"))
+baseplot <- ggplot(data=burden_data_final, aes(x = factor("Strain_dpi" ,levels = graph_order), y="FBU", fill= "mm_strain"))
 #unquote X, Y, and fill
 #Remember that your X axis needs to as class "factor" for ggplot to properly group your data
 
@@ -247,6 +284,7 @@ plot_final <- baseplot +
   scale_color_manual(values= c("#Value1", "#Value2"))+
   
   scale_fill_manual(values= c("#Value1", "#Value2"))+  #sets colors
+  #Standard colors I use: #B50A2AFF, #0E84B4FF
   
   geom_signif(comparisons = list(c("WT_1","SigE_1")),annotation ="Add ANOVA result here", y_position = 7.5)+
   #plot significance levels. Y position is optional, only do this if you don't like the default position

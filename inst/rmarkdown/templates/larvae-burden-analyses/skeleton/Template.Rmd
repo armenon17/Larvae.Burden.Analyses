@@ -134,7 +134,8 @@ for (i in 1:length(burdenall_clean$Label)) {
 ##Otherwise, let's remove unecessary columns and create our final data set to graph
 
 ```{r create final dataset}
-burden_data_final <- subset(burdenall_clean, select = -c(Label))
+burden_data_final <- burdenall_clean[, -1]
+burden_data_final <- burdenall_clean[, -c("Label")]
 
 #now that unecessary columns are removed we can also do our calculations
 burden_data_final$FBU = burden_data_final$Area *burden_data_final$Mean
